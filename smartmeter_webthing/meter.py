@@ -39,7 +39,7 @@ class Meter:
                 self.__serial.open()
                 stream = SmlStreamReader()
                 while True:
-                    bytes = self.__serial.read(250)
+                    bytes = self.__serial.read(500)
                     stream.add(bytes)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
