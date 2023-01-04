@@ -9,8 +9,6 @@ class Meter:
 
     def __init__(self, port: str):
         self.__port = port
-        self.__serial = serial.Serial (port , 9600, timeout=100)
-        self.__serial.close()
         self.__current_power = 0
         self.__produced_power_total = 0
         self.__consumed_power_total = 0
@@ -33,14 +31,18 @@ class Meter:
         return self.__consumed_power_total
 
     def __listen(self):
-        logging.info("opening " + self.__port)
         while True:
+            sensor = None
             try:
-                self.__serial.open()
+                logging.info("opening " + self.__port)
+                sensor = serial.Serial (self.__port , 9600, timeout=100)
+                sensor.close()
+
+                sensor.open()
                 stream = SmlStreamReader()
                 while True:
-                    bytes = self.__serial.read(500)
-                    stream.add(bytes)
+                    data = sensor.read(250)
+                    stream.add(data)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
                         for listener in self.__listeners:
@@ -50,8 +52,12 @@ class Meter:
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
                 logging.info("closing " + self.__port)
-                self.__serial.close()
-                sleep(1)
+                try:
+                    if sensor is not None:
+                        sensor.close()
+                except Exception as e:
+                    pass
+                sleep(5)
 
     def consume_frames(self, stream: SmlStreamReader) -> int:
         consumed_frames = 0
@@ -71,20 +77,3 @@ class Meter:
                             elif str(val.obis.obis_short) == "1.8.0":
                                 self.__consumed_power_total = val.get_value()
                 consumed_frames += 1
-
-
-'''
-
-
-meter = Meter("/dev/ttyUSB-meter")
-
-def process():
-    logging.info("aktuelle Wirkleistung: " + str(meter.current_power))
-    logging.info("Zähler Einspeisung:    " + str(round(meter.produced_power_total/1000, 1)) + " kWh (" + str(meter.produced_power_total) + ")")
-    logging.info("Zähler Bezug:          " + str(round(meter.consumed_power_total/1000, 1)) + " kWh (" + str(meter.consumed_power_total) + ") ")
-
-meter.add_listener(process)
-
-
-sleep(10000)
-'''
