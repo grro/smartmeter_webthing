@@ -127,3 +127,7 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+/.idea/vcs.xml
+/smartmeter_webthing.iml
+/.idea/modules.xml
+/.idea/misc.xml

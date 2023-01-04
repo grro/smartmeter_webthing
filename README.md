@@ -1,1 +1,1 @@
-# smartmeter_webthing
+# smart meter webthing
