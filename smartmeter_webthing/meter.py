@@ -41,7 +41,7 @@ class Meter:
                 sensor.open()
                 stream = SmlStreamReader()
                 while True:
-                    data = sensor.read(250)
+                    data = sensor.read(500)
                     stream.add(data)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
