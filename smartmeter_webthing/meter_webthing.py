@@ -27,7 +27,7 @@ class SmartMeterThing(Thing):
                      self.current_power,
                      metadata={
                          'title': 'current power',
-                         "type": "integer",
+                         "type": "number",
                          'description': 'The current power [Watt]',
                          'readOnly': True,
                      }))
@@ -39,7 +39,7 @@ class SmartMeterThing(Thing):
                      self.produced_power_total,
                      metadata={
                          'title': 'produced power total',
-                         "type": "integer",
+                         "type": "number",
                          'description': 'The total produced power [Watt]',
                          'readOnly': True,
                      }))
@@ -51,7 +51,7 @@ class SmartMeterThing(Thing):
                      self.consumed_power_total,
                      metadata={
                          'title': 'consumed power total',
-                         "type": "integer",
+                         "type": "number",
                          'description': 'The total consumed power [Watt]',
                          'readOnly': True,
                      }))

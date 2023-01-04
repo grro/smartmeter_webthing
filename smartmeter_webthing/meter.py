@@ -43,7 +43,6 @@ class Meter:
                     stream.add(bytes)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
-                        logging.debug("processed " + str(consumed_frames))
                         for listener in self.__listeners:
                             listener()
                     else:
