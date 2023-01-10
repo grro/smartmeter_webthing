@@ -3,7 +3,7 @@ A smart meter web thing connector
 
 This project provides a smart meter [webthing API](https://iot.mozilla.org/wot/). It provides the software to connect an [IR USB sensor](https://wiki.volkszaehler.org/hardware/controllers/ir-schreib-lesekopf-usb-ausgang)  
 
-The smart meter webthing package exposes a http webthing endpoint which supports smart meter consumption values via http. E.g.
+The smart meter webthing package exposes a http webthing endpoint supporting the smart meter consumption values via http. E.g.
 ```
 # webthing has been started on host 192.168.0.23
 
@@ -25,10 +25,10 @@ After this installation you may start the webthing http endpoint inside your pyt
 ```
 sudo smartmeter --command listen --port 7122 --sport /dev/ttyUSB-meter 
 ```
-Here, the webthing API will be bound to the local port 7122. Additionally, the device address of the IR sensor has to be set. To configure the device address refer [setup device](configure.md)  
+Here, the webthing API will use the local port 7122. Additionally, the device address of the IR sensor has to be set. To configure the device address refer [setup device](configure.md)  
 
 Alternatively to the *listen* command, you can use the *register* command to register and start the webthing service as systemd unit.
-By doing this the webthing service will be started automatically on boot. Starting the server manually using the *listen* command is no longer necessary.
+By doing this, the webthing service will be started automatically on boot time. Starting the server manually using the *listen* command as shown above is no longer necessary.
 ```
 sudo smartmeter --command register --port 7122 --sport /dev/ttyUSB-meter 
 ```  
