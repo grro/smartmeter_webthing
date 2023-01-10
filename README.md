@@ -1,7 +1,7 @@
 # smart meter webthing
 A smart meter web thing connector
 
-This project provides a smart meter [webthing API](https://iot.mozilla.org/wot/). It provides the software to connect an [IR USB sensor](https://wiki.volkszaehler.org/hardware/controllers/ir-schreib-lesekopf-usb-ausgang)  
+This project provides a smart meter [webthing API](https://webthings.io/). It provides the software to connect an [IR USB sensor](https://wiki.volkszaehler.org/hardware/controllers/ir-schreib-lesekopf-usb-ausgang)  
 
 <img src="img.png" height="350" />
 
