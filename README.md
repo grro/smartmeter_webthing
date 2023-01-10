@@ -10,9 +10,9 @@ The smart meter webthing package exposes a http webthing endpoint supporting the
 curl http://192.168.0.23:7122/properties 
 
 {
-"current_power": 389,
-"produced_power_total": 3314.7,
-"consumed_power_total": 259784.2
+   "current_power": 389,
+   "produced_power_total": 3314.7,
+   "consumed_power_total": 259784.2
 }
 ```
 
