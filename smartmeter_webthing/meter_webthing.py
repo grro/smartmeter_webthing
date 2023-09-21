@@ -56,13 +56,13 @@ class SmartMeterThing(Thing):
                          'readOnly': True,
                      }))
 
-        self.time_last_frame_processed = Value("")
+        self.measurement_time = Value("")
         self.add_property(
             Property(self,
-                     'time_last_frame_processed',
-                     self.time_last_frame_processed,
+                     'measurement_time',
+                     self.measurement_time,
                      metadata={
-                         'title': 'time valued measured',
+                         'title': 'measurement time',
                          "type": "str",
                          'description': 'The time values measured [iso datetime]',
                          'readOnly': True,
@@ -79,7 +79,7 @@ class SmartMeterThing(Thing):
         self.current_power.notify_of_external_update(self.meter.current_power)
         self.consumed_power_total.notify_of_external_update(self.meter.consumed_power_total)
         self.produced_power_total.notify_of_external_update(self.meter.produced_power_total)
-        self.time_last_frame_processed.notify_of_external_update(self.meter.time_last_frame_processed.strftime("%Y-%m-%dT%H:%M:%S"))
+        self.measurement_time.notify_of_external_update(self.meter.measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
 
 
 def run_server(description: str, port: int, sport: str):
