@@ -43,10 +43,10 @@ class Meter:
                 stream = SmlStreamReader()
 
                 reported_frames = 0
-                start = time()
-                next_report = start
+                start_time = time()
+                next_report_time = 0
                 while True:
-                    elapsed = time() - start
+                    elapsed = time() - start_time
                     if elapsed > 59*60:
                         break
                     data = sensor.read(500)
@@ -58,17 +58,17 @@ class Meter:
                             listener()
                         else:
                             sleep(1)
-                        if elapsed >= next_report:
-                            next_report = time() + 1*60
-                            logging.info("current_power:        " + str(self.__current_power) + "\n" +
-                                         "produced_power_total: " + str(self.__produced_power_total) +  "\n" +
-                                         "consumed_power_total: " + str(self.__consumed_power_total) +  "\n" +
-                                         "frames:               " + str(reported_frames))
-                            reported_frames = 0
+                    if elapsed >= next_report_time:
+                        next_report_time = time() + 60
+                        logging.info("current: " + str(self.__current_power) + " watt; " +
+                                     "produced total: " + str(self.__produced_power_total) +  " watt; " +
+                                     "consumed total: " + str(self.__consumed_power_total) +  " watt; " +
+                                     "frames: " + str(reported_frames))
+                        reported_frames = 0
                 logging.info("closing " + self.__port + " periodically")
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
-                logging.info("closing " + self.__port + " due to error " + str(e))
+                logging.info("closing " + self.__port + " due to error")
                 try:
                     if sensor is not None:
                         sensor.close()
