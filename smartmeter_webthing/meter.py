@@ -53,7 +53,7 @@ class Meter:
                     stream.add(data)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
-                        reported_frames += reported_frames
+                        reported_frames += 1
                         for listener in self.__listeners:
                             listener()
                         else:
