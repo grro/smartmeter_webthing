@@ -41,12 +41,13 @@ class Meter:
 
                 sensor.open()
                 stream = SmlStreamReader()
-                start = time()
+
                 reported_frames = 0
+                start = time()
                 next_report = start
                 while True:
                     elapsed = time() - start
-                    if elapsed > 3*60*60:
+                    if elapsed > 59*60:
                         break
                     data = sensor.read(500)
                     stream.add(data)
@@ -55,15 +56,15 @@ class Meter:
                         reported_frames += reported_frames
                         for listener in self.__listeners:
                             listener()
-                        if elapsed > next_report:
+                        else:
+                            sleep(1)
+                        if elapsed >= next_report:
                             next_report = time() + 5*60
                             logging.info("current_power:        " + str(self.__current_power) + "\n" +
                                          "produced_power_total: " + str(self.__produced_power_total) +  "\n" +
                                          "consumed_power_total: " + str(self.__consumed_power_total) +  "\n" +
                                          "frames:               " + str(reported_frames))
                             reported_frames = 0
-                        else:
-                            sleep(1)
                 logging.info("closing " + self.__port + " periodically")
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
@@ -73,7 +74,7 @@ class Meter:
                         sensor.close()
                 except Exception as e:
                     pass
-                sleep(5)
+                sleep(3)
 
     def consume_frames(self, stream: SmlStreamReader) -> int:
         consumed_frames = 0
