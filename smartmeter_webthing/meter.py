@@ -68,7 +68,7 @@ class Meter:
                 logging.info("closing " + self.__port + " periodically")
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
-                logging.info("closing " + self.__port + " due to errors")
+                logging.info("closing " + self.__port + " due to error " + str(e))
                 try:
                     if sensor is not None:
                         sensor.close()
