@@ -23,7 +23,7 @@ class Unit:
     SyslogIdentifier=$packagename
     StandardOutput=syslog
     StandardError=syslog
-    Restart=always
+    Restart=on-failure
     RestartSec=3
     
     [Install]
