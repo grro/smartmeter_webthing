@@ -42,6 +42,7 @@ class Meter:
                 sensor.open()
                 stream = SmlStreamReader()
                 start = time()
+                reported_frames = 0
                 next_report = start
                 while True:
                     elapsed = time() - start
@@ -51,13 +52,16 @@ class Meter:
                     stream.add(data)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
+                        reported_frames += reported_frames
                         for listener in self.__listeners:
                             listener()
                         if elapsed > next_report:
                             next_report = time() + 5*60
                             logging.info("current_power:        " + str(self.__current_power) + "\n" +
                                          "produced_power_total: " + str(self.__produced_power_total) +  "\n" +
-                                         "consumed_power_total: " + str(self.__consumed_power_total))
+                                         "consumed_power_total: " + str(self.__consumed_power_total) +  "\n" +
+                                         "frames:               " + str(reported_frames))
+                            reported_frames = 0
                         else:
                             sleep(1)
                 logging.info("closing " + self.__port + " periodically")
