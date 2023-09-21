@@ -59,7 +59,7 @@ class Meter:
                         else:
                             sleep(1)
                         if elapsed >= next_report:
-                            next_report = time() + 5*60
+                            next_report = time() + 1*60
                             logging.info("current_power:        " + str(self.__current_power) + "\n" +
                                          "produced_power_total: " + str(self.__produced_power_total) +  "\n" +
                                          "consumed_power_total: " + str(self.__consumed_power_total) +  "\n" +
