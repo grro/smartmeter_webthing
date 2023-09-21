@@ -78,7 +78,9 @@ class Unit:
 
     def printlog(self, port: int):
         service = self.servicename(port)
-        system("sudo journalctl -f -u " + service)
+        cmd = "sudo journalctl -f -u " + service
+        logging.info(cmd)
+        system(cmd)
 
     def servicename(self, port: int):
         return self.packagename + "_" + str(port) + ".service"

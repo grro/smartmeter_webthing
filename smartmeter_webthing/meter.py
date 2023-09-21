@@ -61,8 +61,8 @@ class Meter:
                     if elapsed >= next_report_time:
                         next_report_time = time() + 60
                         logging.info("current: " + str(self.__current_power) + " watt; " +
-                                     "produced total: " + str(self.__produced_power_total) +  " watt; " +
-                                     "consumed total: " + str(self.__consumed_power_total) +  " watt; " +
+                                     "produced total: " + str(self.__produced_power_total) + " watt; " +
+                                     "consumed total: " + str(self.__consumed_power_total) + " watt; " +
                                      "frames: " + str(reported_frames))
                         reported_frames = 0
                 logging.info("closing " + self.__port + " periodically")
