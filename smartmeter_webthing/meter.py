@@ -40,7 +40,7 @@ class Meter:
 
                 sensor.open()
                 stream = SmlStreamReader()
-                while True:
+                for i in range(0, 3 * 60 * 60):
                     data = sensor.read(500)
                     stream.add(data)
                     consumed_frames = self.consume_frames(stream)
@@ -49,9 +49,10 @@ class Meter:
                             listener()
                     else:
                         sleep(1)
+                logging.info("closing " + self.__port + " periodically")
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
-                logging.info("closing " + self.__port)
+                logging.info("closing " + self.__port + " due to errors")
                 try:
                     if sensor is not None:
                         sensor.close()
