@@ -1,5 +1,6 @@
 import serial
 import logging
+from datetime import datetime
 from time import time
 from time import sleep
 from threading import Thread
@@ -13,6 +14,7 @@ class Meter:
         self.__current_power = 0
         self.__produced_power_total = 0
         self.__consumed_power_total = 0
+        self.__time_last_frame_processed = datetime.now()
         self.__listeners = set()
         Thread(target=self.__listen, daemon=True).start()
 
@@ -31,6 +33,10 @@ class Meter:
     def consumed_power_total(self) -> int:
         return self.__consumed_power_total
 
+    @property
+    def time_last_frame_processed(self) -> datetime:
+        return self.__time_last_frame_processed
+
     def __listen(self):
         while True:
             sensor = None
@@ -42,7 +48,6 @@ class Meter:
                 sensor.open()
                 stream = SmlStreamReader()
 
-                reported_frames = 0
                 start_time = time()
                 next_report_time = 0
                 while True:
@@ -53,17 +58,17 @@ class Meter:
                     stream.add(data)
                     consumed_frames = self.consume_frames(stream)
                     if consumed_frames > 0:
-                        reported_frames += 1
+                        self.__time_last_frame_processed = datetime.now()
                         for listener in self.__listeners:
                             listener()
-                        else:
-                            sleep(1)
+                    else:
+                        sleep(1)
                     if elapsed >= next_report_time:
                         next_report_time = time() + 60
                         logging.info("current: " + str(self.__current_power) + " watt; " +
                                      "produced total: " + str(self.__produced_power_total) + " watt; " +
                                      "consumed total: " + str(self.__consumed_power_total) + " watt; " +
-                                     "frames: " + str(reported_frames))
+                                     "time_last_frame_processed: " + self.__time_last_frame_processed.strftime("%Y-%m-%dT%H:%M:%S"))
                         reported_frames = 0
                 logging.info("closing " + self.__port + " periodically")
             except Exception as e:
