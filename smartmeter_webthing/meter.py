@@ -52,24 +52,23 @@ class Meter:
                 next_report_time = 0
                 while True:
                     elapsed = time() - start_time
-                    if elapsed > 59*60:
+                    if elapsed > 15*60:
                         break
                     data = sensor.read(500)
                     stream.add(data)
-                    consumed_frames = self.consume_frames(stream)
-                    if consumed_frames > 0:
+                    num_frames = self.consume_frames(stream)
+                    if num_frames > 0:
                         self.__measurement_time = datetime.now()
                         for listener in self.__listeners:
                             listener()
                     else:
                         sleep(1)
                     if elapsed >= next_report_time:
-                        next_report_time = time() + 60
+                        next_report_time = elapsed + 10
                         logging.info("current: " + str(self.__current_power) + " watt; " +
                                      "produced total: " + str(self.__produced_power_total) + " watt; " +
                                      "consumed total: " + str(self.__consumed_power_total) + " watt; " +
-                                     "time values measured: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
-                        reported_frames = 0
+                                     "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                 logging.info("closing " + self.__port + " periodically")
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
