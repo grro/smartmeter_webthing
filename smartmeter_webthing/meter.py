@@ -50,6 +50,7 @@ class Meter:
 
                 start_time = time()
                 next_report_time = 0
+                last_reported_power = -1
                 while True:
                     elapsed = time() - start_time
                     if elapsed > 15*60:
@@ -64,11 +65,13 @@ class Meter:
                     else:
                         sleep(1)
                     if elapsed >= next_report_time:
-                        next_report_time = elapsed + 10
-                        logging.info("current: " + str(self.__current_power) + " watt; " +
-                                     "produced total: " + str(self.__produced_power_total) + " watt; " +
-                                     "consumed total: " + str(self.__consumed_power_total) + " watt; " +
-                                     "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
+                        if self.__current_power != last_reported_power:
+                            last_reported_power = self.__current_power
+                            next_report_time = elapsed + 5
+                            logging.info("current: " + str(self.__current_power) + " watt; " +
+                                         "produced total: " + str(self.__produced_power_total) + " watt; " +
+                                         "consumed total: " + str(self.__consumed_power_total) + " watt; " +
+                                         "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                 logging.info("closing " + self.__port + " periodically")
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
