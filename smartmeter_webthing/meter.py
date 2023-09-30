@@ -64,6 +64,7 @@ class Meter:
                             listener()
                     else:
                         if datetime.now() > self.__measurement_time + timedelta(minutes=1):
+                            logging.info("no data received since " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                             break
                         else:
                             sleep(1)
