@@ -48,6 +48,7 @@ class Meter:
                 sensor.open()
                 stream = SmlStreamReader()
 
+                self.__measurement_time = datetime.now()
                 start_time = time()
                 next_report_time = 0
                 last_reported_power = -1
