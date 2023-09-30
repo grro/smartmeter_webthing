@@ -1,6 +1,6 @@
 import serial
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from time import time
 from time import sleep
 from threading import Thread
@@ -63,7 +63,10 @@ class Meter:
                         for listener in self.__listeners:
                             listener()
                     else:
-                        sleep(1)
+                        if datetime.now() > self.__measurement_time + timedelta(minutes=1):
+                            break
+                        else:
+                            sleep(1)
                     if elapsed >= next_report_time:
                         if self.__current_power != last_reported_power:
                             last_reported_power = self.__current_power
