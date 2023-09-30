@@ -55,6 +55,7 @@ class Meter:
                 while True:
                     elapsed = time() - start_time
                     if elapsed > 15*60:
+                        logging.info("periodically reconnect. initiate closing")
                         break
                     data = sensor.read(500)
                     stream.add(data)
@@ -65,7 +66,7 @@ class Meter:
                             listener()
                     else:
                         if datetime.now() > self.__measurement_time + timedelta(minutes=1):
-                            logging.info("no data received since " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
+                            logging.info("no data received since " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + " initiate closing")
                             break
                         else:
                             sleep(1)
@@ -77,7 +78,7 @@ class Meter:
                                          "produced total: " + str(self.__produced_power_total) + " watt; " +
                                          "consumed total: " + str(self.__consumed_power_total) + " watt; " +
                                          "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
-                logging.info("closing " + self.__port + " periodically")
+                logging.info("closing " + self.__port)
             except Exception as e:
                 logging.info("error occurred processing serial data "+ str(e))
                 logging.info("closing " + self.__port + " due to error")
