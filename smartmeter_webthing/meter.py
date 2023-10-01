@@ -91,7 +91,7 @@ class Meter:
                             logging.info("current: " + str(self.__current_power) + " watt; " +
                                          "produced total: " + str(self.__produced_power_total) + " watt; " +
                                          "consumed total: " + str(self.__consumed_power_total) + " watt; " +
-                                         "sampling rate: " + str(round(self.sampling_rate,0)) + " per min; " +
+                                         "sampling rate: " + str(int(self.sampling_rate)) + " per min; " +
                                          "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                 logging.info("closing " + self.__port)
             except Exception as e:
