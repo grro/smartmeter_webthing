@@ -15,6 +15,7 @@ class Meter:
         self.__produced_power_total = 0
         self.__consumed_power_total = 0
         self.__measurement_time = datetime.now()
+        self.__samples=[]
         self.__listeners = set()
         Thread(target=self.__listen, daemon=True).start()
 
@@ -36,6 +37,18 @@ class Meter:
     @property
     def measurement_time(self) -> datetime:
         return self.__measurement_time
+
+    @property
+    def sampling_rate(self) -> float:
+        if len(self.__samples) > 0:
+            return sum(self.__samples) / len(self.__samples) * 60
+        else:
+            return 0
+
+    def __sample(self, elapsed_sec: float):
+        self.__samples.append(1 / elapsed_sec)
+        while len(self.__samples) > 30:
+            self.__samples.pop()
 
     def __listen(self):
         read_timeout_sec = 17
@@ -62,6 +75,7 @@ class Meter:
                     stream.add(data)
                     num_frames = self.consume_frames(stream)
                     if num_frames > 0:
+                        self.__sample((datetime.now() - self.__measurement_time).total_seconds())
                         self.__measurement_time = datetime.now()
                         for listener in self.__listeners:
                             listener()
@@ -79,6 +93,7 @@ class Meter:
                             logging.info("current: " + str(self.__current_power) + " watt; " +
                                          "produced total: " + str(self.__produced_power_total) + " watt; " +
                                          "consumed total: " + str(self.__consumed_power_total) + " watt; " +
+                                         "sampling rate: " + str(round(self.sampling_rate,0)) + " per min; " +
                                          "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                 logging.info("closing " + self.__port)
             except Exception as e:
@@ -109,3 +124,16 @@ class Meter:
                             elif str(val.obis.obis_short) == "1.8.0":
                                 self.__consumed_power_total = val.get_value()
                 consumed_frames += 1
+
+
+
+
+
+'''
+logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+logging.getLogger('tornado.access').setLevel(logging.ERROR)
+logging.getLogger('urllib3.connectionpool').setLevel(logging.WARNING)
+
+Meter('/dev/ttyUSB-meter')
+sleep(1000)
+'''

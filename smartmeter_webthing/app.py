@@ -217,4 +217,3 @@ class App:
         print('deregister ' + str(port))
         Unit(self.packagename).deregister(port)
         return True
-
