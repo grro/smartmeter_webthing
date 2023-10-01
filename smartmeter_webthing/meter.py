@@ -38,11 +38,12 @@ class Meter:
         return self.__measurement_time
 
     def __listen(self):
+        read_timeout_sec = 17
         while True:
             sensor = None
             try:
                 logging.info("opening " + self.__port)
-                sensor = serial.Serial (self.__port , 9600, timeout=100)
+                sensor = serial.Serial(self.__port , 9600, timeout=read_timeout_sec)
                 sensor.close()
 
                 sensor.open()
@@ -65,7 +66,7 @@ class Meter:
                         for listener in self.__listeners:
                             listener()
                     else:
-                        if datetime.now() > self.__measurement_time + timedelta(minutes=1):
+                        if datetime.now() > self.__measurement_time + timedelta(seconds=int(read_timeout_sec*2.2)):
                             self.__current_power = 0
                             logging.info("no data received since " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + " initiate closing")
                             break
