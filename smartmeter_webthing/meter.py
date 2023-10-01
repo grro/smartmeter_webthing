@@ -95,6 +95,7 @@ class Meter:
                                          "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                 logging.info("closing " + self.__port)
             except Exception as e:
+                self.__current_power = 0
                 logging.info("error occurred processing serial data "+ str(e))
                 logging.info("closing " + self.__port + " due to error")
                 try:
