@@ -50,6 +50,10 @@ class Meter:
         while len(self.__samples) > 30:
             self.__samples.pop()
 
+    def __reset_metrics(self):
+        self.__current_power = 0
+        self.__samples.clear()
+
     def __listen(self):
         read_timeout_sec = 17
         while True:
@@ -79,7 +83,7 @@ class Meter:
                             listener()
                     else:
                         if datetime.now() > self.__measurement_time + timedelta(seconds=int(read_timeout_sec*2.2)):
-                            self.__current_power = 0
+                            self.__reset_metrics()
                             logging.info("no data received since " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + " initiate closing")
                             break
                         else:
@@ -95,7 +99,7 @@ class Meter:
                                          "measurement time: " + self.__measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
                 logging.info("closing " + self.__port)
             except Exception as e:
-                self.__current_power = 0
+                self.__reset_metrics()
                 logging.info("error occurred processing serial data "+ str(e))
                 logging.info("closing " + self.__port + " due to error")
                 try:
