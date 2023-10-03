@@ -75,7 +75,7 @@ class SmartMeterThing(Thing):
                      self.sampling_rate,
                      metadata={
                          'title': 'sampling rate',
-                         "type": "int",
+                         "type": "number",
                          'description': 'The sampling rate per minute',
                          'readOnly': True,
                      }))
