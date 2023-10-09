@@ -249,18 +249,3 @@ class Meter:
         return self.__consumed_power_total
 
 
-
-
-logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
-
-
-meter = Meter("/dev/ttyUSB-meter",  10 * 60)
-
-def on_data():
-    pass
-
-meter.add_listener(on_data)
-
-
-while True:
-    sleep(10)
