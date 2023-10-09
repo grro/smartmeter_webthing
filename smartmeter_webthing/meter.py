@@ -215,8 +215,10 @@ class Meter:
                 break
 
     def _on_error(self, e):
+        self.__current_power = 0
         self.__last_error_date = datetime.now()
         self.__current_power_samples.clear()
+        self.__notify_listeners()
         logging.info("error occurred processing serial data " + str(e))
 
     def _on_power(self, current_power):
