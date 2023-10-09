@@ -68,6 +68,19 @@ class SmartMeterThing(Thing):
                          'readOnly': True,
                      }))
 
+        self.last_error_time = Value("")
+        self.add_property(
+            Property(self,
+                     'last_error_time',
+                     self.last_error_time,
+                     metadata={
+                         'title': 'last error time',
+                         "type": "str",
+                         'description': 'The time last error occurred [iso datetime]',
+                         'readOnly': True,
+                     }))
+
+
         self.sampling_rate = Value(0)
         self.add_property(
             Property(self,
@@ -91,6 +104,7 @@ class SmartMeterThing(Thing):
         self.consumed_power_total.notify_of_external_update(self.meter.consumed_power_total)
         self.produced_power_total.notify_of_external_update(self.meter.produced_power_total)
         self.measurement_time.notify_of_external_update(self.meter.measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
+        self.last_error_time.notify_of_external_update(self.meter.last_error_time.strftime("%Y-%m-%dT%H:%M:%S"))
         self.sampling_rate.notify_of_external_update(int(self.meter.sampling_rate))
 
 
