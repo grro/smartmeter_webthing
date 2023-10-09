@@ -4,7 +4,7 @@ from typing import List
 from datetime import datetime, timedelta
 from time import time
 from time import sleep
-from threading import Thread, Lock
+from threading import Thread, RLock
 from smllib import SmlStreamReader
 from smllib.sml import SmlGetListResponse
 
@@ -19,14 +19,14 @@ class SerialReader:
                  close_listener,
                  max_connection_time: int,
                  read_timeout: int = 8):
-        self.__lock = Lock()
+        self.__lock = RLock()
         self.is_running= True
         self.__data_listener = data_listener
         self.__error_listener = error_listener
         self.__close_listener = close_listener
         self.__max_connection_time = max_connection_time
         self.__port = port
-        self.sensor = serial.Serial(self.__port , 9600, timeout=read_timeout)
+        self.sensor = serial.Serial(self.__port , 9600, exclusive=False, timeout=read_timeout)
 
     def start(self):
         logging.info("opening " + self.__port)
@@ -60,7 +60,7 @@ class SerialReader:
                     break
             logging.info("closing " + self.__port)
         except Exception as e:
-            self.__error_listener(e)
+            self.__error_listener(Exception("error occurred reading data ", e))
             logging.info("closing " + self.__port + " due to error")
             sleep(3)
         finally:
@@ -87,7 +87,6 @@ class ReconnectingSerialReader:
 
     def _on_inner_stream_closed(self):
         if self.is_running:
-            logging.info("initiate reopening of " + self.__port)
             self.reader = SerialReader(self.__port, self.__data_listener, self._on_inner_stream_error, self._on_inner_stream_closed, self.__reconnect_period_sec)
             self.reader.start()
 
@@ -136,6 +135,7 @@ class MeterValuesReader:
                 self.__sml_stream_reader.clear()
                 raise e
 
+
 class Meter:
 
     def __init__(self, port: str, reconnect_period_sec: int=15*60):
@@ -182,7 +182,7 @@ class Meter:
         now = datetime.now()
         self.__current_power_samples.append(now)
         for i in range(0, len(self.__current_power_samples)):
-            if now > self.__current_power_samples[0] + timedelta(minutes=1):
+            if now > self.__current_power_samples[0] + timedelta(seconds=90):
                 self.__current_power_samples.pop()
             else:
                 break
@@ -190,7 +190,7 @@ class Meter:
     def _on_error(self, e):
         self.__last_error_date = datetime.now()
         self.__current_power_samples.clear()
-        logging.info("error occurred processing serial data "+ str(e))
+        logging.info("error occurred processing serial data " + str(e))
 
     def _on_power(self, current_power):
         self.__current_power = current_power
@@ -220,4 +220,5 @@ class Meter:
     @property
     def consumed_power_total(self) -> int:
         return self.__consumed_power_total
+
 
