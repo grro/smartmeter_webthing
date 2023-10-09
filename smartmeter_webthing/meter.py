@@ -1,5 +1,6 @@
 import serial
 import logging
+from abc import ABC, abstractmethod
 from typing import List
 from datetime import datetime, timedelta
 from time import time
@@ -10,23 +11,41 @@ from smllib.sml import SmlGetListResponse
 
 
 
+class DataListener(ABC):
+
+    @abstractmethod
+    def on_read(self, data):
+        pass
+
+    @abstractmethod
+    def on_read_error(self, e):
+        pass
+
+
+
+class LifecycleListener(ABC):
+
+    @abstractmethod
+    def on_closed(self):
+        pass
+
+
+
 class SerialReader:
 
     def __init__(self,
                  port,
-                 data_listener,
-                 error_listener,
-                 close_listener,
+                 data_listener: DataListener,
+                 lifeclycle_listener: LifecycleListener,
                  max_connection_time: int,
                  read_timeout: int = 8):
         self.__lock = RLock()
         self.is_running= True
         self.__data_listener = data_listener
-        self.__error_listener = error_listener
-        self.__close_listener = close_listener
+        self.__lifeclycle_listener = lifeclycle_listener
         self.__max_connection_time = max_connection_time
         self.__port = port
-        self.sensor = serial.Serial(self.__port , 9600, exclusive=False, timeout=read_timeout)
+        self.sensor = serial.Serial(self.__port, 9600, timeout=read_timeout)
 
     def start(self):
         logging.info("opening " + self.__port)
@@ -42,25 +61,32 @@ class SerialReader:
                 except Exception as e:
                     logging.warning("error occurred closing " + str(self.__port) + " " + str(e))
                 try:
-                    self.__close_listener()
+                    self.__lifeclycle_listener.on_closed()
                     self.is_running = False
                 except Exception as e:
                     logging.warning("error occurred calling close listener" + str(e))
 
     def __listen(self):
+        error_counter = 0
         start_time = time()
         try:
             while self.is_running:
                 elapsed = time() - start_time
-                if elapsed < self.__max_connection_time:
-                    data = self.sensor.read(100)
-                    self.__data_listener(data)
-                else:
+                if elapsed > self.__max_connection_time:
                     logging.info("max connection time "+ str(self.__max_connection_time) + " sec exceeded. closing " + self.__port)
                     break
+                else:
+                    try:
+                        data = self.sensor.read(100)
+                        self.__data_listener.on_read(data)
+                        error_counter = 0
+                    except Exception as e:
+                        error_counter += 1
+                        self.__data_listener.on_read_error(e)
+                        if error_counter > 3:
+                            raise Exception("error occurred reading data ", e)
             logging.info("closing " + self.__port)
         except Exception as e:
-            self.__error_listener(Exception("error occurred reading data ", e))
             logging.info("closing " + self.__port + " due to error")
             sleep(3)
         finally:
@@ -68,15 +94,19 @@ class SerialReader:
 
 
 
-class ReconnectingSerialReader:
+class ReconnectingSerialReader(LifecycleListener):
 
-    def __init__(self, port, data_listener, error_listener, reconnect_period_sec: int=15*60):
+    def __init__(self, port, data_listener: DataListener, reconnect_period_sec: int=15*60):
         self.is_running = True
         self.__port = port
         self.__data_listener = data_listener
-        self.__error_listener = error_listener
         self.__reconnect_period_sec = reconnect_period_sec
-        self.reader = SerialReader(port, data_listener, self._on_inner_stream_error, self._on_inner_stream_closed, reconnect_period_sec)
+        self.reader = SerialReader(port, data_listener, self, reconnect_period_sec)
+
+    def on_closed(self):
+        if self.is_running:
+            self.reader = SerialReader(self.__port, self.__data_listener,self, self.__reconnect_period_sec)
+            self.reader.start()
 
     def start(self):
         self.reader.start()
@@ -85,16 +115,8 @@ class ReconnectingSerialReader:
         self.is_running = False
         self.reader.close()
 
-    def _on_inner_stream_closed(self):
-        if self.is_running:
-            self.reader = SerialReader(self.__port, self.__data_listener, self._on_inner_stream_error, self._on_inner_stream_closed, self.__reconnect_period_sec)
-            self.reader.start()
 
-    def _on_inner_stream_error(self, e):
-        self.__error_listener(e)
-
-
-class MeterValuesReader:
+class MeterValuesReader(DataListener):
 
     def __init__(self, port, on_power_listener, on_produced_listener, on_consumed_listener, on_error_listener, reconnect_period_sec: int):
         self.is_running = True
@@ -102,7 +124,7 @@ class MeterValuesReader:
         self.__on_produced_listener = on_produced_listener
         self.__on_consumed_listener = on_consumed_listener
         self.__sml_stream_reader = SmlStreamReader()
-        self.reader = ReconnectingSerialReader(port, self._on_data, on_error_listener, reconnect_period_sec)
+        self.reader = ReconnectingSerialReader(port, self, reconnect_period_sec)
 
     def start(self):
         self.reader.start()
@@ -112,7 +134,7 @@ class MeterValuesReader:
         self.reader.close()
         self.__current_power = 0
 
-    def _on_data(self, data):
+    def on_read(self, data):
         self.__sml_stream_reader.add(data)
         while True:
             try:
@@ -133,7 +155,12 @@ class MeterValuesReader:
                                     self.__on_consumed_listener(val.get_value())
             except Exception as e:
                 self.__sml_stream_reader.clear()
-                raise e
+                ex = Exception("error occurred parsing frame", e)
+                logging.warning(ex)
+
+    def on_read_error(self, e):
+        self.__sml_stream_reader.clear()
+        logging.warning("error occurred reading data " + str(e))
 
 
 class Meter:
@@ -222,3 +249,18 @@ class Meter:
         return self.__consumed_power_total
 
 
+
+
+logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
+
+
+meter = Meter("/dev/ttyUSB-meter",  10 * 60)
+
+def on_data():
+    pass
+
+meter.add_listener(on_data)
+
+
+while True:
+    sleep(10)
