@@ -147,6 +147,7 @@ class Meter:
         self.__current_power_samples: List[datetime] =[]
         self.__current_power_measurement_time = datetime.now() - timedelta(days=1)
         self.__last_error_date = datetime.now() - timedelta(days=365)
+        self.__last_reported_power = datetime.now() - timedelta(days=365)
         self.__meter_values_reader = MeterValuesReader(port, self._on_power, self._on_produced, self._on_consumed, self._on_error, reconnect_period_sec)
         self.__meter_values_reader.start()
 
@@ -195,6 +196,10 @@ class Meter:
         self.__current_power = current_power
         self.__sample_current_power()
         self.__notify_listeners()
+        if datetime.now() > self.__last_reported_power + timedelta(seconds=5):
+            self.__last_reported_power = datetime.now()
+            logging.info("current: " + str(self.__current_power) + " watt; " +
+                         "sampling rate: " + str(int(self.sampling_rate)) + " per min")
 
     def _on_produced(self, produced_power_total):
         self.__produced_power_total = produced_power_total
@@ -215,25 +220,4 @@ class Meter:
     @property
     def consumed_power_total(self) -> int:
         return self.__consumed_power_total
-
-
-
-
-
-
-logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
-
-
-meter = Meter("/dev/ttyUSB-meter",  60)
-
-def on_data():
-    print("current " + str(meter.current_power))
-    print("sampling rate " + str(meter.sampling_rate))
-
-meter.add_listener(on_data)
-
-
-while True:
-    sleep(10)
-
 
