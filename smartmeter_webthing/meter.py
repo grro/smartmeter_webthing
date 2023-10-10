@@ -165,7 +165,7 @@ class MeterValuesReader(DataListener):
 
 class Meter:
 
-    def __init__(self, port: str, reconnect_period_sec: int=15*60):
+    def __init__(self, port: str, reconnect_period_sec: int=45*60):
         self.__port = port
         self.__current_power = 0
         self.__produced_power_total = 0
