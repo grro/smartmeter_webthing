@@ -1,7 +1,7 @@
 import serial
 import logging
 from abc import ABC, abstractmethod
-from typing import List, Dict, Final
+from typing import List, Final
 from datetime import datetime, timedelta
 from time import time
 from time import sleep
@@ -107,7 +107,7 @@ class ReconnectingSerialReader(LifecycleListener):
 
     def on_closed(self):
         if self.is_running:
-            self.reader = SerialReader(self.__port, self.__data_listener,self, self.__reconnect_period_sec)
+            self.reader = SerialReader(self.__port, self.__data_listener, self, self.__reconnect_period_sec)
             self.reader.start()
 
     def start(self):
@@ -127,7 +127,6 @@ class MeterValuesReader(DataListener):
                  on_consumed_listener,
                  on_error_listener,
                  reconnect_period_sec: int):
-        self.is_running = True
         self.__on_power_listener = on_power_listener
         self.__on_produced_listener = on_produced_listener
         self.__on_consumed_listener = on_consumed_listener
@@ -139,12 +138,11 @@ class MeterValuesReader(DataListener):
         self.reader.start()
 
     def close(self):
-        self.is_running = False
         self.reader.close()
 
     def on_read(self, data):
         self.__sml_stream_reader.add(data)
-        while True:
+        for i in range(0, len(data)):   # limit loops in case of strange errors
             try:
                 sml_frame = self.__sml_stream_reader.get_frame()
                 if sml_frame is None:
