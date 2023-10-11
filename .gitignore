@@ -131,3 +131,4 @@ dmypy.json
 /smartmeter_webthing.iml
 /.idea/modules.xml
 /.idea/misc.xml
+/requirements.txt

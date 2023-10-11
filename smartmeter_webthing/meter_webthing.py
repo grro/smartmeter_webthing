@@ -1,6 +1,7 @@
 from webthing import (SingleThing, Property, Thing, Value, WebThingServer)
 import logging
 import tornado.ioloop
+from datetime import datetime, timedelta
 from smartmeter_webthing.meter import Meter
 
 
@@ -29,6 +30,30 @@ class SmartMeterThing(Thing):
                          'title': 'current power',
                          "type": "number",
                          'description': 'The current power [Watt]',
+                         'readOnly': True,
+                     }))
+
+        self.average_produced_power = Value(0)
+        self.add_property(
+            Property(self,
+                     'average_produced_power',
+                     self.average_produced_power,
+                     metadata={
+                         'title': 'average produced power (daily)',
+                         "type": "number",
+                         'description': 'The daily average power (produced only) [Watt]',
+                         'readOnly': True,
+                     }))
+
+        self.average_consumed_power = Value(0)
+        self.add_property(
+            Property(self,
+                     'average_consumed_power',
+                     self.average_consumed_power,
+                     metadata={
+                         'title': 'average consumed power (daily)',
+                         "type": "number",
+                         'description': 'The daily average power (consumed only) [Watt]',
                          'readOnly': True,
                      }))
 
@@ -100,12 +125,17 @@ class SmartMeterThing(Thing):
         self.ioloop.add_callback(self.__on_value_changed)
 
     def __on_value_changed(self):
-        self.current_power.notify_of_external_update(self.meter.current_power)
         self.consumed_power_total.notify_of_external_update(self.meter.consumed_power_total)
         self.produced_power_total.notify_of_external_update(self.meter.produced_power_total)
         self.measurement_time.notify_of_external_update(self.meter.measurement_time.strftime("%Y-%m-%dT%H:%M:%S"))
         self.last_error_time.notify_of_external_update(self.meter.last_error_time.strftime("%Y-%m-%dT%H:%M:%S"))
         self.sampling_rate.notify_of_external_update(int(self.meter.sampling_rate))
+        self.average_produced_power.notify_of_external_update(self.meter.average_produced_power)
+        self.average_consumed_power.notify_of_external_update(self.meter.average_consumed_power)
+        if datetime.now() > self.meter.measurement_time + timedelta(minutes=2):
+            self.current_power.notify_of_external_update(self.meter.average_consumed_power)
+        else:
+            self.current_power.notify_of_external_update(self.meter.current_power)
 
 
 def run_server(description: str, port: int, sport: str):
