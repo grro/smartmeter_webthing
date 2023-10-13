@@ -9,6 +9,14 @@ from importlib.metadata import metadata, entry_points
 from typing import List, Any, Dict
 
 
+@dataclass
+class ServiceInfo:
+    file: str
+    servicename: str
+    port: int
+    active: bool
+
+
 
 class Unit:
 
@@ -85,14 +93,14 @@ class Unit:
     def servicename(self, port: int):
         return self.packagename + "_" + str(port) + ".service"
 
-    def list_installed(self):
+    def list_installed(self) -> List[ServiceInfo]:
         services = []
         try:
             for file in listdir(pathlib.Path("/", "etc", "systemd", "system")):
                 if file.startswith(self.packagename) and file.endswith('.service'):
                     idx = file.rindex('_')
-                    port = str(file[idx+1:file.index('.service')])
-                    services.append((file, port, self.is_active(file)))
+                    port = int(str(file[idx+1:file.index('.service')]))
+                    services.append(ServiceInfo(file, self.servicename(port), port,   self.is_active(file)))
         except Exception as e:
             pass
         return services
@@ -198,9 +206,8 @@ class App:
         if len(self.unit.list_installed()) > 0:
             print("example commands for registered services")
             for service_info in self.unit.list_installed():
-                port = service_info[1]
-                print(" sudo " + self.entrypoint + " --command deregister --port " + port)
-                print(" sudo " + self.entrypoint + " --command log --port " + port)
+                print(" sudo " + self.entrypoint + " --command deregister --port " + str(service_info.port))
+                print(" sudo journalctl -f -n 50 -u " + service_info.servicename)
         return True
 
     def do_listen(self, port: int, args: Dict[str, Any]) -> bool:

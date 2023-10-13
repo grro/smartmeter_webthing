@@ -13,6 +13,10 @@ from redzoo.database.simple import SimpleDB
 class DataListener(ABC):
 
     @abstractmethod
+    def on_reset(self):
+        pass
+
+    @abstractmethod
     def on_read(self, data):
         pass
 
@@ -50,6 +54,7 @@ class SerialReader:
                 self.sensor.close()
             except Exception as e:
                 self.__logger.warning("error occurred closing " + str(self.__port) + " " + str(e))
+            self.__data_listener.on_reset()
         self.is_running = False
 
     def __listen(self):
@@ -133,6 +138,9 @@ class MeterProtocolReader(DataListener):
     def close(self):
         self.reader.close()
 
+    def on_reset(self):
+        self.__sml_stream_reader.clear()
+
     def on_read(self, data):
         self.__sml_stream_reader.add(data)
         for i in range(0, len(data)):   # limit loops in case of strange errors
@@ -152,11 +160,11 @@ class MeterProtocolReader(DataListener):
                                 elif str(val.obis.obis_short) == "1.8.0":
                                     self.__on_consumed_listener(val.get_value())
             except Exception as e:
-                self.__sml_stream_reader.clear()
+                self.on_reset()
                 self.__logger.warning(Exception("error occurred parsing frame", e))
 
     def on_read_error(self, e):
-        self.__sml_stream_reader.clear()
+        self.on_reset()
         self.__on_error_listener(e)
 
 
