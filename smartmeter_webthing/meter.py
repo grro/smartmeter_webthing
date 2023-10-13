@@ -32,6 +32,7 @@ class SerialReader:
         self.__port = port
         self.__read_timeout = read_timeout
         self.creation_date = datetime.now()
+        self.last_time_data_received = datetime.now()
         self.is_running = False
         self.sensor = serial.Serial(self.__port, 9600, timeout=read_timeout)
 
@@ -52,20 +53,25 @@ class SerialReader:
         self.is_running = False
 
     def __listen(self):
-        num_consecutive_errors = 0
-        while self.is_running:
-            try:
+        try:
+            while self.is_running:
                 data = self.sensor.read(100)
                 if len(data) > 0:
-                    num_consecutive_errors = 0
+                    self.last_time_data_received = datetime.now()
                     self.__data_listener.on_read(data)
-                else:
-                    raise Exception("no data received within " + str(self.__read_timeout) + " sec")
-            except Exception as e:
-                num_consecutive_errors += 1
-                self.__data_listener.on_read_error(e)
-                if num_consecutive_errors >= 3:
-                    self.close("error: " + str(Exception("sensor - error occurred reading data ", e)))
+        except Exception as e:
+            self.__data_listener.on_read_error(e)
+            self.close("error: " + str(Exception("error occurred reading sensor data ", e)))
+        finally:
+            self.close()
+
+    @property
+    def elapsed_sec_since_data_received(self) -> float:
+        return (datetime.now() - self.last_time_data_received).total_seconds()
+
+    @property
+    def elapsed_sec_since_created(self) -> float:
+        return (datetime.now() - self.creation_date).total_seconds()
 
 
 class ReconnectingSerialReader:
@@ -83,9 +89,10 @@ class ReconnectingSerialReader:
             sleep(3)
             try:
                 if self.reader.is_running:
-                    elapsed_sec = (datetime.now() - self.reader.creation_date).total_seconds()
-                    if elapsed_sec > self.__reconnect_period_sec:
-                        self.reader.close("max connection time "+ str(self.__reconnect_period_sec) + " sec exceeded")
+                    if self.reader.elapsed_sec_since_data_received > 30:
+                        self.reader.close("no data received since "+ str( self.reader.elapsed_sec_since_data_received) + " sec")
+                    elif self.reader.elapsed_sec_since_created > self.__reconnect_period_sec:
+                        self.reader.close("max connection time " + str(self.__reconnect_period_sec) + " sec exceeded")
                 if not self.reader.is_running:
                     self.reader = SerialReader(self.__port, self.__data_listener, self.__reconnect_period_sec)
                     self.reader.start()
