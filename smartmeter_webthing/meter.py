@@ -226,7 +226,7 @@ class Meter:
         self.__sample_current_power()
         self.__notify_listeners()
         self.__db.put(datetime.now().strftime("%H:%M"), current_power)
-        if datetime.now() > self.__last_reported_power + timedelta(seconds=5):
+        if datetime.now() > self.__last_reported_power + timedelta(seconds=30):
             self.__last_reported_power = datetime.now()
             self.__logger.info("current: " + str(self.__current_power) + " watt; " +
                                "sampling rate: " + str(int(self.sampling_rate)) + " per min")
