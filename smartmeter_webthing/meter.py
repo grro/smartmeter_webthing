@@ -90,7 +90,9 @@ class ReconnectingSerialReader:
             try:
                 if self.reader.is_running:
                     if self.reader.elapsed_sec_since_data_received > 30:
-                        self.reader.close("no data received since "+ str( self.reader.elapsed_sec_since_data_received) + " sec")
+                        ex = Exception("no data received since "+ str( self.reader.elapsed_sec_since_data_received) + " sec")
+                        self.__data_listener.on_read_error(ex)
+                        self.reader.close()
                     elif self.reader.elapsed_sec_since_created > self.__reconnect_period_sec:
                         self.reader.close("max connection time " + str(self.__reconnect_period_sec) + " sec exceeded")
                 if not self.reader.is_running:
@@ -280,4 +282,6 @@ meter.add_listener(on_data)
 
 while True:
     sleep(10)
+    logging.info("crt " + str(meter.current_power))
+    logging.info("avg " + str(meter.average_consumed_power))
 '''

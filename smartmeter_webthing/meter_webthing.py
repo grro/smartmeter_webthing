@@ -132,10 +132,7 @@ class SmartMeterThing(Thing):
         self.sampling_rate.notify_of_external_update(int(self.meter.sampling_rate))
         self.average_produced_power.notify_of_external_update(self.meter.average_produced_power)
         self.average_consumed_power.notify_of_external_update(self.meter.average_consumed_power)
-        if datetime.now() > self.meter.measurement_time + timedelta(minutes=2):
-            self.current_power.notify_of_external_update(self.meter.average_consumed_power)
-        else:
-            self.current_power.notify_of_external_update(self.meter.current_power)
+        self.current_power.notify_of_external_update(self.meter.current_power)
 
 
 def run_server(description: str, port: int, sport: str):
