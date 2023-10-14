@@ -224,8 +224,6 @@ class Meter:
     def _on_error(self, e):
         self.__logger.warning("error occurred processing serial data " + str(e))
         self.__last_error_date = datetime.now()
-        self.__current_power = 0
-        self.__power_measurements.clear()
         self.__notify_listeners()
 
     def _on_power(self, current_power: int):
@@ -249,7 +247,7 @@ class Meter:
 
     @property
     def current_power(self) -> int:
-        if datetime.now() > self.__current_power_measurement_time + timedelta(minutes=3):
+        if datetime.now() > self.__current_power_measurement_time + timedelta(minutes=1):
             self.__logger.warning("outdated measurements (" + self.__current_power_measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + "). returning average of last 24h")
             return self.average_consumed_power
         else:
