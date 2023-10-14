@@ -49,24 +49,25 @@ class SerialReader:
 
     def close(self, reason: str = ""):
         if self.is_running:
+            self.is_running = False
             try:
                 self.__logger.info("closing " + self.__port + " " + reason)
                 self.sensor.close()
             except Exception as e:
                 self.__logger.warning("error occurred closing " + str(self.__port) + " " + str(e))
             self.__data_listener.on_reset()
-        self.is_running = False
 
     def __listen(self):
         try:
             while self.is_running:
-                data = self.sensor.read(200)
-                if len(data) > 0:
+                data = self.sensor.read(200)   # blocks until enough data or read timeout
+                if self.is_running and len(data) > 0:
                     self.last_time_data_received = datetime.now()
                     self.__data_listener.on_read(data)
         except Exception as e:
-            self.__data_listener.on_read_error(e)
-            self.close("error: " + str(Exception("error occurred reading sensor data ", e)))
+            if self.is_running:
+                self.__data_listener.on_read_error(e)
+                self.close("error: " + str(Exception("error occurred reading sensor data ", e)))
         finally:
             self.close()
 
@@ -223,7 +224,7 @@ class Meter:
         return self.__last_error_date
 
     def _on_error(self, e):
-        self.__logger.warning("error occurred processing serial data " + str(e))
+        self.__logger.warning("error occurred processing sensor data: " + str(e))
         self.__last_error_date = datetime.now()
         self.__notify_listeners()
 
