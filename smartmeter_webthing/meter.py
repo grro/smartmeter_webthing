@@ -280,7 +280,7 @@ class Meter:
         return self.__consumed_power_total
 
 
-
+'''
 logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 
 
@@ -294,5 +294,4 @@ meter.add_listener(on_data)
 
 while True:
     sleep(10)
-    logging.info("crt " + str(meter.current_power))
-    logging.info("avg " + str(meter.average_consumed_power))
+'''
