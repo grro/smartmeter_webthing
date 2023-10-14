@@ -60,7 +60,7 @@ class SerialReader:
     def __listen(self):
         try:
             while self.is_running:
-                data = self.sensor.read(100)
+                data = self.sensor.read(200)
                 if len(data) > 0:
                     self.last_time_data_received = datetime.now()
                     self.__data_listener.on_read(data)
@@ -281,7 +281,6 @@ class Meter:
 
 
 
-'''
 logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
 
 
@@ -297,4 +296,3 @@ while True:
     sleep(10)
     logging.info("crt " + str(meter.current_power))
     logging.info("avg " + str(meter.average_consumed_power))
-'''
