@@ -204,11 +204,12 @@ class Meter:
         else:
             return 0
 
-    def __sample_current_power(self):
-        now = datetime.now()
-        self.__power_measurements.append(now)
+    def __power_measured(self, current_power:int):
+        self.__current_power_measurement_time = datetime.now()
+        self.__db.put(datetime.now().strftime("%H:%M"), current_power)
+        self.__power_measurements.append(self.__current_power_measurement_time)
         for i in range(0, len(self.__power_measurements)):
-            if now > self.__power_measurements[0] + timedelta(seconds=90):
+            if self.__current_power_measurement_time > self.__power_measurements[0] + timedelta(seconds=90):
                 self.__power_measurements.pop()
             else:
                 break
@@ -228,10 +229,11 @@ class Meter:
 
     def _on_power(self, current_power: int):
         self.__current_power = current_power
-        self.__current_power_measurement_time = datetime.now()
-        self.__sample_current_power()
+        self.__power_measured(current_power)
         self.__notify_listeners()
-        self.__db.put(datetime.now().strftime("%H:%M"), current_power)
+        self.__log_power_change()
+
+    def __log_power_change(self):
         if datetime.now() > self.__last_reported_power + timedelta(seconds=30):
             self.__last_reported_power = datetime.now()
             self.__logger.info("current: " + str(self.__current_power) + " watt; " +
