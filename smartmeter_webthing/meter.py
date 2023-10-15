@@ -179,7 +179,7 @@ class Meter:
         self.__produced_power_total = 0
         self.__consumed_power_total = 0
         self.__listeners = set()
-        self.__power_measurements: List[datetime] =[]
+        self.__power_measurements: List[datetime] = []
         self.__current_power_measurement_time = datetime.now() - timedelta(days=1)
         self.__last_error_date = datetime.now() - timedelta(days=365)
         self.__last_reported_power = datetime.now() - timedelta(days=365)
@@ -205,12 +205,11 @@ class Meter:
         else:
             return 0
 
-    def __power_measured(self, current_power:int):
-        self.__current_power_measurement_time = datetime.now()
-        self.__db.put(datetime.now().strftime("%H:%M"), current_power)
-        self.__power_measurements.append(self.__current_power_measurement_time)
+    def __sample(self):
+        now = datetime.now()
+        self.__power_measurements.append(now)
         for i in range(0, len(self.__power_measurements)):
-            if self.__current_power_measurement_time > self.__power_measurements[0] + timedelta(seconds=90):
+            if now > self.__power_measurements[0] + timedelta(seconds=120):
                 self.__power_measurements.pop()
             else:
                 break
@@ -230,8 +229,10 @@ class Meter:
 
     def _on_power(self, current_power: int):
         self.__current_power = current_power
-        self.__power_measured(current_power)
+        self.__current_power_measurement_time = datetime.now()
         self.__notify_listeners()
+        self.__db.put(self.__current_power_measurement_time.strftime("%H:%M"), current_power)
+        self.__sample()
         self.__log_power_change()
 
     def __log_power_change(self):
