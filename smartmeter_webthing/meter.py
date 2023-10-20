@@ -252,7 +252,7 @@ class Meter:
     @property
     def current_power(self) -> int:
         if datetime.now() > self.__current_power_measurement_time + timedelta(minutes=1):
-            self.__logger.warning("outdated measurements (" + self.__current_power_measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + "). returning average of last 24h: " + str(self.average_consumed_power))
+            self.__logger.warning("outdated measurements (" + self.__current_power_measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + "). returning average of last 24h: " + str(self.average_consumed_power) + "W")
             return self.average_consumed_power
         else:
             return self.__current_power
