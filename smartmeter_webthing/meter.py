@@ -30,7 +30,7 @@ class SerialReader:
     def __init__(self,
                  port: str,
                  data_listener: DataListener,
-                 read_timeout: int = 8):
+                 read_timeout: int = 25):
         self.__logger = logging.getLogger(self.__class__.__name__)
         self.__data_listener = data_listener
         self.__port = port
@@ -61,9 +61,12 @@ class SerialReader:
         try:
             while self.is_running:
                 data = self.sensor.read(200)   # blocks until enough data or read timeout
-                if self.is_running and len(data) > 0:
-                    self.last_time_data_received = datetime.now()
-                    self.__data_listener.on_read(data)
+                if self.is_running:
+                    if len(data) > 0:
+                        self.last_time_data_received = datetime.now()
+                        self.__data_listener.on_read(data)
+                    else:
+                        raise Exception("read timeout " + str(self.__read_timeout) + "sec exceeded")
         except Exception as e:
             if self.is_running:
                 self.__data_listener.on_read_error(e)
@@ -101,6 +104,7 @@ class ReconnectingSerialReader:
                         self.reader.close()
                     elif self.reader.elapsed_sec_since_created > self.__reconnect_period_sec:
                         self.reader.close("max connection time " + str(self.__reconnect_period_sec) + " sec exceeded")
+
                 if not self.reader.is_running:
                     self.reader = SerialReader(self.__port, self.__data_listener, self.__reconnect_period_sec)
                     self.reader.start()
@@ -175,7 +179,6 @@ class Meter:
         self.__logger = logging.getLogger(self.__class__.__name__)
         self.__db = SimpleDB("meter_daily_power_values", sync_period_sec=10*60)
         self.__port = port
-        self.__current_power = 0
         self.__produced_power_total = 0
         self.__consumed_power_total = 0
         self.__listeners = set()
@@ -183,6 +186,7 @@ class Meter:
         self.__current_power_measurement_time = datetime.now() - timedelta(days=1)
         self.__last_error_date = datetime.now() - timedelta(days=365)
         self.__last_reported_power = datetime.now() - timedelta(days=365)
+        self.__current_power = self.average_produced_power
         self.__meter_values_reader = MeterProtocolReader(port, self._on_power, self._on_produced, self._on_consumed, self._on_error, reconnect_period_sec)
         self.__meter_values_reader.start()
 
@@ -225,6 +229,8 @@ class Meter:
     def _on_error(self, e):
         self.__logger.warning("error occurred processing sensor data: " + str(e))
         self.__last_error_date = datetime.now()
+        if datetime.now() > self.__current_power_measurement_time + timedelta(minutes=1):
+            self.__current_power = self.average_produced_power    # reset to average
         self.__notify_listeners()
 
     def _on_power(self, current_power: int):
@@ -251,12 +257,7 @@ class Meter:
 
     @property
     def current_power(self) -> int:
-        threshold_min = 1
-        if datetime.now() > self.__current_power_measurement_time + timedelta(minutes=threshold_min):
-            self.__logger.warning("outdated measurements (" + self.__current_power_measurement_time.strftime("%Y-%m-%dT%H:%M:%S") + "). Older than " + str(threshold_min) + "min. Returning average of last 24h: " + str(self.average_consumed_power) + "W")
-            return self.average_consumed_power
-        else:
-            return self.__current_power
+        return self.__current_power
 
     @property
     def average_produced_power(self) -> int:
