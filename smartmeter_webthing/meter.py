@@ -13,10 +13,6 @@ from redzoo.database.simple import SimpleDB
 class DataListener(ABC):
 
     @abstractmethod
-    def on_reset(self):
-        pass
-
-    @abstractmethod
     def on_read(self, data) -> bool:
         pass
 
@@ -55,7 +51,7 @@ class SerialReader:
                 self.sensor.close()
             except Exception as e:
                 self.__logger.warning("error occurred closing " + str(self.__port) + " " + str(e))
-            self.__data_listener.on_reset()
+            self.__data_listener.on_error(Exception("connection closed"))
 
     def __listen(self):
         try:
