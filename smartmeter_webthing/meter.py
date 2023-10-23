@@ -17,7 +17,7 @@ class DataListener(ABC):
         pass
 
     @abstractmethod
-    def on_read(self, data):
+    def on_read(self, data) -> bool:
         pass
 
     @abstractmethod
@@ -63,8 +63,9 @@ class SerialReader:
                 data = self.sensor.read(200)   # blocks until enough data or read timeout
                 if self.is_running:
                     if len(data) > 0:
-                        self.last_time_data_received = datetime.now()
-                        self.__data_listener.on_read(data)
+                        data_read = self.__data_listener.on_read(data)
+                        if data_read:
+                            self.last_time_data_received = datetime.now()
                     else:
                         raise Exception("read timeout " + str(self.__read_timeout) + "sec exceeded")
         except Exception as e:
@@ -148,13 +149,13 @@ class MeterProtocolReader(DataListener):
     def on_reset(self):
         self.__sml_stream_reader.clear()
 
-    def on_read(self, data):
+    def on_read(self, data) -> bool:
         self.__sml_stream_reader.add(data)
         for i in range(0, len(data)):   # limit loops in case of strange errors
             try:
                 sml_frame = self.__sml_stream_reader.get_frame()
                 if sml_frame is None:
-                    return
+                    return True
                 else:
                     parsed_msgs = sml_frame.parse_frame()
                     for msg in parsed_msgs:
@@ -169,6 +170,8 @@ class MeterProtocolReader(DataListener):
             except Exception as e:
                 self.on_reset()
                 self.__logger.warning(Exception("error occurred parsing frame", e))
+                return False
+        return True
 
     def on_read_error(self, e):
         self.on_reset()
@@ -284,7 +287,6 @@ class Meter:
     @property
     def consumed_power_total(self) -> int:
         return self.__consumed_power_total
-
 
 '''
 logging.basicConfig(format='%(asctime)s %(name)-20s: %(levelname)-8s %(message)s', level=logging.DEBUG, datefmt='%Y-%m-%d %H:%M:%S')
