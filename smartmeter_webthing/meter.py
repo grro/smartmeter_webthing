@@ -119,20 +119,32 @@ class ReconnectingSerialReader:
         self.reader.close()
 
 
+
+
+class ParserListener(ABC):
+
+    @abstractmethod
+    def on_power_changed(self, power: int):
+        pass
+
+    @abstractmethod
+    def on_produced_changed(self, produced: int):
+        pass
+
+    @abstractmethod
+    def on_consumed_changed(self, consumed: int):
+        pass
+
+    @abstractmethod
+    def on_error(self, e: Exception):
+        pass
+
+
 class MeterProtocolReader(DataListener):
 
-    def __init__(self,
-                 port: str,
-                 on_power_listener,
-                 on_produced_listener,
-                 on_consumed_listener,
-                 on_error_listener,
-                 reconnect_period_sec: int):
+    def __init__(self, port: str, parser_listener: ParserListener, reconnect_period_sec: int):
         self.__logger = logging.getLogger(self.__class__.__name__)
-        self.__on_power_listener = on_power_listener
-        self.__on_produced_listener = on_produced_listener
-        self.__on_consumed_listener = on_consumed_listener
-        self.__on_error_listener = on_error_listener
+        self.__parser_listener = parser_listener
         self.__sml_stream_reader = SmlStreamReader()
         self.reader = ReconnectingSerialReader(port, self, reconnect_period_sec)
 
@@ -156,21 +168,21 @@ class MeterProtocolReader(DataListener):
                         if isinstance(msg.message_body, SmlGetListResponse):
                             for val in msg.message_body.val_list:
                                 if str(val.obis.obis_short) == "16.7.0":
-                                    self.__on_power_listener(val.get_value())
+                                    self.__parser_listener.on_power_changed(int(val.get_value()))
                                 elif str(val.obis.obis_short) == "2.8.0":
-                                    self.__on_produced_listener(val.get_value())
+                                    self.__parser_listener.on_produced_changed(int(val.get_value()))
                                 elif str(val.obis.obis_short) == "1.8.0":
-                                    self.__on_consumed_listener(val.get_value())
+                                    self.__parser_listener.on_consumed_changed(int(val.get_value()))
             except Exception as e:
                 self.on_error(Exception("error occurred parsing frame", e))
         return message_processed
 
     def on_error(self, e):
         self.__sml_stream_reader.clear()
-        self.__on_error_listener(e)
+        self.__parser_listener.on_error(e)
 
 
-class Meter:
+class Meter(ParserListener):
 
     def __init__(self, port: str, reconnect_period_sec: int=90*60):
         self.__logger = logging.getLogger(self.__class__.__name__)
@@ -184,7 +196,7 @@ class Meter:
         self.__last_error_date = datetime.now() - timedelta(days=365)
         self.__last_reported_power = datetime.now() - timedelta(days=365)
         self.__current_power = self.average_produced_power
-        self.__meter_values_reader = MeterProtocolReader(port, self._on_power, self._on_produced, self._on_consumed, self._on_error, reconnect_period_sec)
+        self.__meter_values_reader = MeterProtocolReader(port, self, reconnect_period_sec)
         self.__meter_values_reader.start()
 
     def add_listener(self, listener):
@@ -223,14 +235,14 @@ class Meter:
     def last_error_time(self) -> datetime:
         return self.__last_error_date
 
-    def _on_error(self, e):
+    def on_error(self, e):
         self.__logger.warning("error occurred processing sensor data: " + str(e))
         self.__last_error_date = datetime.now()
         if datetime.now() > self.__power_measurement_time + timedelta(minutes=1):
             self.__current_power = self.average_produced_power    # reset to average
         self.__notify_listeners()
 
-    def _on_power(self, current_power: int):
+    def on_power_changed(self, current_power: int):
         self.__current_power = current_power
         self.__power_measurement_time = datetime.now()
         self.__notify_listeners()
@@ -244,11 +256,11 @@ class Meter:
             self.__logger.info("current: " + str(self.__current_power) + " watt; " +
                                "sampling rate: " + str(int(self.sampling_rate)) + " per min")
 
-    def _on_produced(self, produced_power_total: int):
+    def on_produced_changed(self, produced_power_total: int):
         self.__produced_power_total = produced_power_total
         self.__notify_listeners()
 
-    def _on_consumed(self, consumed_power_total: int):
+    def on_consumed_changed(self, consumed_power_total: int):
         self.__consumed_power_total = consumed_power_total
         self.__notify_listeners()
 
