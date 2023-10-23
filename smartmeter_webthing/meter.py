@@ -21,7 +21,7 @@ class DataListener(ABC):
         pass
 
     @abstractmethod
-    def on_read_error(self, e):
+    def on_error(self, e):
         pass
 
 
@@ -36,7 +36,7 @@ class SerialReader:
         self.__port = port
         self.__read_timeout = read_timeout
         self.creation_date = datetime.now()
-        self.last_time_data_received = datetime.now()
+        self.last_time_data_processed = datetime.now()
         self.is_running = False
         self.sensor = serial.Serial(self.__port, 9600, timeout=read_timeout)
 
@@ -65,19 +65,19 @@ class SerialReader:
                     if len(data) > 0:
                         data_read = self.__data_listener.on_read(data)
                         if data_read:
-                            self.last_time_data_received = datetime.now()
+                            self.last_time_data_processed = datetime.now()
                     else:
                         raise Exception("read timeout " + str(self.__read_timeout) + "sec exceeded")
         except Exception as e:
             if self.is_running:
-                self.__data_listener.on_read_error(e)
+                self.__data_listener.on_error(e)
                 self.close("error: " + str(Exception("error occurred reading sensor data ", e)))
         finally:
             self.close()
 
     @property
-    def elapsed_sec_since_data_received(self) -> float:
-        return (datetime.now() - self.last_time_data_received).total_seconds()
+    def elapsed_sec_since_data_processed(self) -> float:
+        return (datetime.now() - self.last_time_data_processed).total_seconds()
 
     @property
     def elapsed_sec_since_created(self) -> float:
@@ -99,9 +99,9 @@ class ReconnectingSerialReader:
             sleep(3)
             try:
                 if self.reader.is_running:
-                    if self.reader.elapsed_sec_since_data_received > 30:
-                        ex = Exception("no data received since "+ str( self.reader.elapsed_sec_since_data_received) + " sec")
-                        self.__data_listener.on_read_error(ex)
+                    if self.reader.elapsed_sec_since_data_processed > 30:
+                        ex = Exception("no data processed since " + str(self.reader.elapsed_sec_since_data_processed) + " sec")
+                        self.__data_listener.on_error(ex)
                         self.reader.close()
                     elif self.reader.elapsed_sec_since_created > self.__reconnect_period_sec:
                         self.reader.close("max connection time " + str(self.__reconnect_period_sec) + " sec exceeded")
@@ -146,19 +146,17 @@ class MeterProtocolReader(DataListener):
     def close(self):
         self.reader.close()
 
-    def on_reset(self):
-        self.__sml_stream_reader.clear()
-
     def on_read(self, data) -> bool:
         self.__sml_stream_reader.add(data)
+        message_processed = False
         for i in range(0, len(data)):   # limit loops in case of strange errors
             try:
                 sml_frame = self.__sml_stream_reader.get_frame()
                 if sml_frame is None:
-                    return True
+                    break
                 else:
-                    parsed_msgs = sml_frame.parse_frame()
-                    for msg in parsed_msgs:
+                    for msg in sml_frame.parse_frame():
+                        message_processed = True
                         if isinstance(msg.message_body, SmlGetListResponse):
                             for val in msg.message_body.val_list:
                                 if str(val.obis.obis_short) == "16.7.0":
@@ -168,13 +166,11 @@ class MeterProtocolReader(DataListener):
                                 elif str(val.obis.obis_short) == "1.8.0":
                                     self.__on_consumed_listener(val.get_value())
             except Exception as e:
-                self.on_reset()
-                self.__logger.warning(Exception("error occurred parsing frame", e))
-                return False
-        return True
+                self.on_error(Exception("error occurred parsing frame", e))
+        return message_processed
 
-    def on_read_error(self, e):
-        self.on_reset()
+    def on_error(self, e):
+        self.__sml_stream_reader.clear()
         self.__on_error_listener(e)
 
 
@@ -188,7 +184,7 @@ class Meter:
         self.__consumed_power_total = 0
         self.__listeners = set()
         self.__power_measurements: List[datetime] = []
-        self.__current_power_measurement_time = datetime.now() - timedelta(days=1)
+        self.__power_measurement_time = datetime.now() - timedelta(days=1)
         self.__last_error_date = datetime.now() - timedelta(days=365)
         self.__last_reported_power = datetime.now() - timedelta(days=365)
         self.__current_power = self.average_produced_power
@@ -225,7 +221,7 @@ class Meter:
 
     @property
     def measurement_time(self) -> datetime:
-        return self.__current_power_measurement_time
+        return self.__power_measurement_time
 
     @property
     def last_error_time(self) -> datetime:
@@ -234,15 +230,15 @@ class Meter:
     def _on_error(self, e):
         self.__logger.warning("error occurred processing sensor data: " + str(e))
         self.__last_error_date = datetime.now()
-        if datetime.now() > self.__current_power_measurement_time + timedelta(minutes=1):
+        if datetime.now() > self.__power_measurement_time + timedelta(minutes=1):
             self.__current_power = self.average_produced_power    # reset to average
         self.__notify_listeners()
 
     def _on_power(self, current_power: int):
         self.__current_power = current_power
-        self.__current_power_measurement_time = datetime.now()
+        self.__power_measurement_time = datetime.now()
         self.__notify_listeners()
-        self.__db.put(self.__current_power_measurement_time.strftime("%H:%M"), current_power)
+        self.__db.put(self.__power_measurement_time.strftime("%H:%M"), current_power)
         self.__sample()
         self.__log_power_change()
 
