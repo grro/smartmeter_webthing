@@ -1,14 +1,13 @@
 ls# Configure Smart meter IR write/read head (USB)
 
 
-find usb devices 
+find serial devices 
 ```
-ls -l /dev/serial/{by-path,by-id}/*
-
+ ls -l /dev/serial/by-id/*
+ 
 lrwxrwxrwx 1 root root 13 Oct 24 21:44 /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0051-if00-port0 -> ../../ttyUSB0
-lrwxrwxrwx 1 root root 13 Oct 24 21:44 /dev/serial/by-path/platform-3f980000.usb-usb-0:1.4:1.0-port0 -> ../../ttyUSB0
 ```
 
-Here the first entry (/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0051-if00-port0) is the IR read/write head. 
+Here a single entry is returned which is the IR read/write head. 
 
 
