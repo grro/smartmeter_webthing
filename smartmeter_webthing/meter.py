@@ -106,12 +106,12 @@ class ReconnectingSerialReader:
                     self.reader.start()
             except Exception as e:
                 self.__logger.warning("error occurred processing watchdog " + str(e))
-        self.__logger.warning("watchdog terminated")
+        self.__logger.info("watchdog terminated")
 
     def start(self):
         self.reader.start()
         Thread(target=self.__watchdog, daemon=True).start()
-        self.__logger.warning("watchdog started")
+        self.__logger.info("watchdog started")
 
     def close(self):
         self.is_running = False
