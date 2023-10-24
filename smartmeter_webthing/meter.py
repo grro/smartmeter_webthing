@@ -238,7 +238,7 @@ class Meter(ParserListener):
         self.__logger.warning("error occurred processing sensor data: " + str(e))
         self.__last_error_date = datetime.now()
         if datetime.now() > self.__power_measurement_time + timedelta(minutes=1):
-            self.__current_power = self.average_produced_power    # reset to average
+            self.__current_power = self.average_consumed_power    # reset to average
         self.__notify_listeners()
 
     def on_power_changed(self, current_power: int):
@@ -250,7 +250,7 @@ class Meter(ParserListener):
         self.__log_power_change()
 
     def __log_power_change(self):
-        if datetime.now() > self.__last_reported_power + timedelta(seconds=30):
+        if datetime.now() > self.__last_reported_power + timedelta(seconds=10):
             self.__last_reported_power = datetime.now()
             self.__logger.info("current: " + str(self.__current_power) + " watt; " +
                                "sampling rate: " + str(int(self.sampling_rate)) + " per min")
