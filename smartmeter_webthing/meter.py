@@ -8,6 +8,7 @@ from threading import Thread
 from smllib import SmlStreamReader
 from smllib.sml import SmlGetListResponse
 from redzoo.database.simple import SimpleDB
+from redzoo.math.display import duration
 
 
 class DataListener(ABC):
@@ -100,7 +101,7 @@ class ReconnectingSerialReader:
                         self.__data_listener.on_error(ex)
                         self.reader.close()
                     elif self.reader.elapsed_sec_since_created > self.__reconnect_period_sec:
-                        self.reader.close("max connection time " + str(self.__reconnect_period_sec) + " sec exceeded")
+                        self.reader.close("max connection time " + duration(self.__reconnect_period_sec) + " exceeded")
 
                 if not self.reader.is_running:
                     self.reader = SerialReader(self.__port, self.__data_listener, self.__reconnect_period_sec)
