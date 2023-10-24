@@ -83,7 +83,7 @@ class SerialReader:
 
 class ReconnectingSerialReader:
 
-    def __init__(self, port: str, data_listener: DataListener, reconnect_period_sec: int = 15*60):
+    def __init__(self, port: str, data_listener: DataListener, reconnect_period_sec: int):
         self.__logger = logging.getLogger(self.__class__.__name__)
         self.is_running = True
         self.__port = port
@@ -183,7 +183,7 @@ class MeterProtocolReader(DataListener):
 
 class Meter(ParserListener):
 
-    def __init__(self, port: str, reconnect_period_sec: int=90*60):
+    def __init__(self, port: str, reconnect_period_min: int=4*60):
         self.__logger = logging.getLogger(self.__class__.__name__)
         self.__db = SimpleDB("meter_daily_power_values", sync_period_sec=10*60)
         self.__port = port
@@ -195,7 +195,7 @@ class Meter(ParserListener):
         self.__last_error_date = datetime.now() - timedelta(days=365)
         self.__last_reported_power = datetime.now() - timedelta(days=365)
         self.__current_power = self.average_produced_power
-        self.__meter_values_reader = MeterProtocolReader(port, self, reconnect_period_sec)
+        self.__meter_values_reader = MeterProtocolReader(port, self, reconnect_period_sec=reconnect_period_min*60)
         self.__meter_values_reader.start()
 
     def add_listener(self, listener):
