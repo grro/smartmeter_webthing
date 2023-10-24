@@ -97,7 +97,7 @@ class ReconnectingSerialReader:
             try:
                 if self.reader.is_running:
                     if self.reader.elapsed_sec_since_data_processed > 30:
-                        self.reader.close("no data processed since " + str(self.reader.elapsed_sec_since_data_processed) + " sec")
+                        self.reader.close("no data processed since " + duration(self.reader.elapsed_sec_since_data_processed))
                     elif self.reader.elapsed_sec_since_created > self.__reconnect_period_sec:
                         self.reader.close("max connection time " + duration(self.__reconnect_period_sec) + " exceeded")
 

@@ -25,7 +25,7 @@ sudo pip install smartmeter_webthing
 
 After installation, you can start the webthing http endpoint in your Python code or from the command line by typing
 ```
-sudo smartmeter --command listen --port 7122 --sport /dev/ttyUSB-meter 
+sudo smartmeter --command listen --port 7122 --sport /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0051-if00-port0
 ```
 Here the webthing API will use the local port 7122. Additionally, the device address of the IR sensor must be set. To configure the device address, see [setup device](configure.md).
 
@@ -33,5 +33,5 @@ As an alternative to the *list* command, you can also use the *register* command
 This way, the webthing service is started automatically at boot time. Starting the server manually with the *listen* command, as shown above, is no longer necessary.
 
 ```
-sudo smartmeter --command register --port 7122 --sport /dev/ttyUSB-meter 
+sudo smartmeter --command register --port 7122 --sport /dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0051-if00-port0
 ```  
